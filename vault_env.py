@@ -12,9 +12,6 @@ dag = DAG(
 task = BashOperator(
     task_id='vault_jar',
     bash_command='''
-# Java 설치
-apt-get update && apt-get install -y openjdk-11-jre-headless
-
 # Secret에서 credentials 읽기  
 JENKINS_ROLE_ID=$(cat /var/run/secrets/vault-credentials/vault-jenkins-role-id)
 JENKINS_SECRET_ID=$(cat /var/run/secrets/vault-credentials/vault-jenkins-secret-id)
@@ -23,24 +20,52 @@ JENKINS_SECRET_ID=$(cat /var/run/secrets/vault-credentials/vault-jenkins-secret-
 JENKINS_TOKEN=$(curl -s -X POST \
     -H "Content-Type: application/json" \
     -d "{\\"role_id\\":\\"$JENKINS_ROLE_ID\\",\\"secret_id\\":\\"$JENKINS_SECRET_ID\\"}" \
-    $VAULT_ADDR/v1/auth/approle/login | \
-    python3 -c "import sys, json; print(json.load(sys.stdin)['auth']['client_token'])")
+    $VAULT_ADDR/v1/auth/approle/login | sed 's/.*"client_token":"\\([^"]*\\)".*/\\1/')
 
-# App credentials 획득
-APP_ROLE_ID=$(curl -s -H "X-Vault-Token: $JENKINS_TOKEN" \
-    $VAULT_ADDR/v1/auth/approle/role/app-role/role-id | \
-    python3 -c "import sys, json; print(json.load(sys.stdin)['data']['role_id'])")
+echo "Jenkins Token acquired"
 
-APP_SECRET_ID=$(curl -s -X POST -H "X-Vault-Token: $JENKINS_TOKEN" \
-    $VAULT_ADDR/v1/auth/approle/role/app-role/secret-id | \
-    python3 -c "import sys, json; print(json.load(sys.stdin)['data']['secret_id'])")
+# App Role ID 획득
+ROLE_ID_RESPONSE=$(curl -s -H "X-Vault-Token: $JENKINS_TOKEN" \
+    $VAULT_ADDR/v1/auth/approle/role/app-role/role-id)
+export VAULT_ROLE_ID=$(echo $ROLE_ID_RESPONSE | sed 's/.*"role_id":"\\([^"]*\\)".*/\\1/')
 
-export VAULT_ROLE_ID="$APP_ROLE_ID"
-export VAULT_SECRET_ID="$APP_SECRET_ID"
+# App Secret ID 생성
+SECRET_ID_RESPONSE=$(curl -s -X POST -H "X-Vault-Token: $JENKINS_TOKEN" \
+    $VAULT_ADDR/v1/auth/approle/role/app-role/secret-id)
+export VAULT_SECRET_ID=$(echo $SECRET_ID_RESPONSE | sed 's/.*"secret_id":"\\([^"]*\\)".*/\\1/')
+
+echo "App Role ID: $VAULT_ROLE_ID"
+echo "App Secret ID acquired"
 
 # JAR 실행
-curl -L -o app.jar https://github.com/scvit/terraform-aws-vpc_module/releases/download/1.0.3/udf-pki-1.0.0.jar
-java -jar app.jar
+curl -L -o udf-pki-1.0.0.jar https://github.com/scvit/terraform-aws-vpc_module/releases/download/1.0.3/udf-pki-1.0.0.jar
+java -jar udf-pki-1.0.0.jar
 ''',
-    dag=dag
+    dag=dag,
+    executor_config={
+        "pod_override": {
+            "spec": {
+                "securityContext": {
+                    "runAsUser": 0
+                },
+                "containers": [{
+                    "name": "base",
+                    "securityContext": {
+                        "runAsUser": 0
+                    },
+                    "volumeMounts": [{
+                        "name": "vault-credentials",
+                        "mountPath": "/var/run/secrets/vault-credentials",
+                        "readOnly": True
+                    }]
+                }],
+                "volumes": [{
+                    "name": "vault-credentials",
+                    "secret": {
+                        "secretName": "vault-credentials"
+                    }
+                }]
+            }
+        }
+    }
 )
