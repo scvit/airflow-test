@@ -12,6 +12,9 @@ dag = DAG(
 task = BashOperator(
     task_id='vault_jar',
     bash_command='''
+## java 설치
+apt-get update && apt-get install -y openjdk-11-jre-headless
+
 # 시스템 환경변수에서 jenkins credentials 가져오기
 echo "Jenkins Role ID: $JENKINS_ROLE_ID"
 
