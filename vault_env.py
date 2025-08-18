@@ -5,16 +5,19 @@ from datetime import datetime
 dag = DAG(
     'vault_env',
     start_date=datetime(2024,1,1),
-    schedule=None,  # schedule_interval → schedule
+    schedule=None,
     catchup=False
 )
 
 task = BashOperator(
     task_id='vault_jar',
     bash_command='''
+# Java 설치
+apt-get update && apt-get install -y openjdk-11-jre-headless
 
-# 시스템 환경변수에서 jenkins credentials 가져오기
-echo "Jenkins Role ID: $JENKINS_ROLE_ID"
+# Secret에서 credentials 읽기  
+JENKINS_ROLE_ID=$(cat /var/run/secrets/vault-credentials/vault-jenkins-role-id)
+JENKINS_SECRET_ID=$(cat /var/run/secrets/vault-credentials/vault-jenkins-secret-id)
 
 # Jenkins AppRole로 토큰 획득
 JENKINS_TOKEN=$(curl -s -X POST \
