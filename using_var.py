@@ -47,6 +47,6 @@ task = KubernetesPodOperator(
         k8s.V1EnvVar(name='JENKINS_ROLE_ID', value='{{ var.value.jenkins_role_id }}'),
         k8s.V1EnvVar(name='JENKINS_SECRET_ID', value='{{ var.value.jenkins_secret_id }}'),
     ],
-    is_delete_operator_pod=False,
+    is_delete_operator_pod=True,
     dag=dag
 )
