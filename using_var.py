@@ -14,7 +14,7 @@ task = KubernetesPodOperator(
     task_id='vault_jar',
     name='vault-jar-pod',
     namespace='airflow',
-    image='eclipse-temurin:17-jre',
+    image='openjdk:17-jdk-slim',
     cmds=['/bin/bash'],
     arguments=['-c', '''
         # curl 설치
