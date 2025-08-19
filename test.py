@@ -10,12 +10,11 @@ dag = DAG(
     catchup=False
 )
 
-# Java가 설치된 Pod에서 실행
 task = KubernetesPodOperator(
     task_id='vault_jar',
     name='vault-jar-pod',
     namespace='airflow',
-    image='openjdk:11-jre-slim',  # Java가 있는 이미지
+    image='openjdk:11-jre-slim',
     cmds=['/bin/bash'],
     arguments=['-c', '''
         # curl 설치
@@ -25,10 +24,15 @@ task = KubernetesPodOperator(
         JENKINS_ROLE_ID=$(cat /var/run/secrets/vault-credentials/vault-jenkins-role-id)
         JENKINS_SECRET_ID=$(cat /var/run/secrets/vault-credentials/vault-jenkins-secret-id)
         
+        echo "Jenkins Role ID: ${JENKINS_ROLE_ID:0:10}..."
+        echo "Jenkins Secret ID: ${JENKINS_SECRET_ID:0:10}..."
+        
         # Jenkins 토큰 획득
         JENKINS_TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
             -d "{\\"role_id\\":\\"$JENKINS_ROLE_ID\\",\\"secret_id\\":\\"$JENKINS_SECRET_ID\\"}" \
             $VAULT_ADDR/v1/auth/approle/login | sed 's/.*"client_token":"\\([^"]*\\)".*/\\1/')
+        
+        echo "Jenkins Token: ${JENKINS_TOKEN:0:10}..."
         
         # App credentials 획득
         VAULT_ROLE_ID=$(curl -s -H "X-Vault-Token: $JENKINS_TOKEN" \
@@ -37,10 +41,22 @@ task = KubernetesPodOperator(
         VAULT_SECRET_ID=$(curl -s -X POST -H "X-Vault-Token: $JENKINS_TOKEN" \
             $VAULT_ADDR/v1/auth/approle/role/app-role/secret-id | sed 's/.*"secret_id":"\\([^"]*\\)".*/\\1/')
         
-        export VAULT_ROLE_ID VAULT_SECRET_ID
+        echo "App Role ID: $VAULT_ROLE_ID"
+        echo "App Secret ID: ${VAULT_SECRET_ID:0:10}..."
         
-        # JAR 다운로드 및 실행
+        # 환경변수 설정하고 JAR 실행
+        export VAULT_ROLE_ID="$VAULT_ROLE_ID"
+        export VAULT_SECRET_ID="$VAULT_SECRET_ID"
+        
+        # JAR 다운로드
         curl -L -o app.jar https://github.com/scvit/terraform-aws-vpc_module/releases/download/1.0.3/udf-pki-1.0.0.jar
+        
+        # 환경변수 확인
+        echo "Final VAULT_ROLE_ID: $VAULT_ROLE_ID"
+        echo "Final VAULT_SECRET_ID: ${VAULT_SECRET_ID:0:10}..."
+        echo "Final VAULT_ADDR: $VAULT_ADDR"
+        
+        # JAR 실행
         java -jar app.jar
     '''],
     env_vars=[
