@@ -30,15 +30,14 @@ VAULT_SECRET_ID=$(curl -s -X POST -H "X-Vault-Token: $JENKINS_TOKEN" \
 
 export VAULT_ROLE_ID VAULT_SECRET_ID
 
-# JAR 다운로드 및 실행
+echo "Vault credentials acquired"
+echo "VAULT_ROLE_ID: $VAULT_ROLE_ID"
+
+# JAR 다운로드
 curl -L -o app.jar https://github.com/scvit/terraform-aws-vpc_module/releases/download/1.0.3/udf-pki-1.0.0.jar
 
-# Java 확인 후 실행
-if command -v java; then
-    java -jar app.jar
-else
-    echo "Java 없음 - 환경 설정만 완료"
-fi
+# Java로 JAR 실행
+java -jar app.jar
 """,
     dag=dag
 )
