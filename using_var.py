@@ -4,7 +4,7 @@ from kubernetes.client import models as k8s
 from datetime import datetime
 
 dag = DAG(
-    'vault_test',
+    'using_var',
     start_date=datetime(2024,1,1),
     schedule=None,
     catchup=False
