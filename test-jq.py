@@ -54,7 +54,7 @@ task = KubernetesPodOperator(
         k8s.V1EnvVar(name='VAULT_ADDR', value='{{ var.value.vault_addr }}'),
         k8s.V1EnvVar(name='AIRFLOW_ROLE_ID', value='{{ var.value.airflow_role_id }}'),
         k8s.V1EnvVar(name='AIRFLOW_SECRET_ID', value='{{ var.value.airflow_secret_id }}'),
-        k8s.V1EnvVar(name='KEY_NAME', value='airflowkey')
+        k8s.V1EnvVar(name='KEY_NAME', value='key50')
     ],
     is_delete_operator_pod=False,
     dag=dag
