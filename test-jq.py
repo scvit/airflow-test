@@ -39,7 +39,7 @@ task = KubernetesPodOperator(
         
         # App role credentials 획득
         export VAULT_ROLE_ID=$(vault read -field=role_id auth/approle/role/app-role/role-id)
-        export VAULT_SECRET_ID=$(vault write -field=secret_id auth/approle/role/app-role/secret-id)
+        export VAULT_SECRET_ID=$(vault write -f -field=secret_id auth/approle/role/app-role/secret-id)
         
         echo "Successfully obtained app-role credentials"
         echo "App Role ID: ${VAULT_ROLE_ID:0:10}..."
