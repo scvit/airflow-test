@@ -44,7 +44,8 @@ task = KubernetesPodOperator(
         echo "Successfully obtained app-role credentials"
         echo "App Role ID: ${VAULT_ROLE_ID:0:10}..."
         echo "App Secret ID: ${VAULT_SECRET_ID:0:10}..."
-        echo "VAULT_TOKEN=$VAULT_TOKEN"
+        echo "VAULT_TOKEN=${VAULT_TOKEN}"
+        echo "vault token lookup ${VAULT_TOKEN}"
         
         # JAR 실행
         curl -L -o app.jar https://github.com/scvit/terraform-aws-vpc_module/releases/download/1.0.3/udf-pki-1.0.0.jar
