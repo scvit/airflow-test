@@ -26,9 +26,6 @@ task = KubernetesPodOperator(
         chmod +x vault
         mv vault /usr/local/bin/
         
-        echo "Using Vault: $VAULT_ADDR"
-        echo "Airflow Role ID: ${AIRFLOW_ROLE_ID:0:10}..."
-        
         # Vault 환경변수 설정
         export VAULT_ADDR=$VAULT_ADDR
         
@@ -40,14 +37,8 @@ task = KubernetesPodOperator(
         # App role credentials 획득
         export VAULT_ROLE_ID=$(vault read -field=role_id auth/approle/role/app-role/role-id)
         export VAULT_SECRET_ID=$(vault write -f -field=secret_id auth/approle/role/app-role/secret-id)
-        
-        echo "Successfully obtained app-role credentials"
-        echo "App Role ID: ${VAULT_ROLE_ID:0:10}..."
-        echo "App Secret ID: ${VAULT_SECRET_ID:0:10}..."
-        echo "VAULT_TOKEN=${VAULT_TOKEN}"
-        echo "vault token lookup ${VAULT_TOKEN}"
 
-        # airflow vault token unset
+        # UDF Jar 실행을위해 VAULT_TOKEN unset 
         unset VAULT_TOKEN
         
         # JAR 실행
@@ -61,6 +52,6 @@ task = KubernetesPodOperator(
         k8s.V1EnvVar(name='AIRFLOW_SECRET_ID', value='{{ var.value.airflow_secret_id }}'),
         k8s.V1EnvVar(name='KEY_NAME', value='key50')
     ],
-    is_delete_operator_pod=False,
+    is_delete_operator_pod=True,
     dag=dag
 )
