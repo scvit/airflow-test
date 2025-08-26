@@ -17,25 +17,33 @@ task = KubernetesPodOperator(
     image='openjdk:17-jdk-slim',
     cmds=['/bin/bash'],
     arguments=['-c', '''
-        # curl 설치
-        apt-get update && apt-get install -y curl jq
+        # 필요한 패키지 설치
+        apt-get update && apt-get install -y curl unzip
+        
+        # Vault CLI 설치
+        curl -fsSL https://releases.hashicorp.com/vault/1.20.2/vault_1.20.2_linux_amd64.zip -o vault.zip
+        unzip vault.zip
+        chmod +x vault
+        mv vault /usr/local/bin/
         
         echo "Using Vault: $VAULT_ADDR"
         echo "Airflow Role ID: ${AIRFLOW_ROLE_ID:0:10}..."
         
-        # AIRFLOW 토큰 획득
-        AIRFLOW_TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
-    -d "{\"role_id\":\"$AIRFLOW_ROLE_ID\",\"secret_id\":\"$AIRFLOW_SECRET_ID\"}" \
-    $VAULT_ADDR/v1/auth/approle/login | jq -r '.auth.client_token')
+        # Vault 환경변수 설정
+        export VAULT_ADDR=$VAULT_ADDR
         
-        # App credentials 획득
-VAULT_ROLE_ID=$(curl -s -H "X-Vault-Token: $AIRFLOW_TOKEN" \
-    $VAULT_ADDR/v1/auth/approle/role/app-role/role-id | jq -r '.data.role_id')
-
-VAULT_SECRET_ID=$(curl -s -X POST -H "X-Vault-Token: $AIRFLOW_TOKEN" \
-    $VAULT_ADDR/v1/auth/approle/role/app-role/secret-id | jq -r '.data.secret_id')
-
-export VAULT_ROLE_ID VAULT_SECRET_ID
+        # AIRFLOW로 Vault 로그인
+        export VAULT_TOKEN=$(vault write -field=token auth/approle/login \
+            role_id="$AIRFLOW_ROLE_ID" \
+            secret_id="$AIRFLOW_SECRET_ID")
+        
+        # App role credentials 획득
+        export VAULT_ROLE_ID=$(vault read -field=role_id auth/approle/role/app-role/role-id)
+        export VAULT_SECRET_ID=$(vault write -field=secret_id auth/approle/role/app-role/secret-id)
+        
+        echo "Successfully obtained app-role credentials"
+        echo "App Role ID: ${VAULT_ROLE_ID:0:10}..."
+        echo "App Secret ID: ${VAULT_SECRET_ID:0:10}..."
         
         # JAR 실행
         curl -L -o app.jar https://github.com/scvit/terraform-aws-vpc_module/releases/download/1.0.3/udf-pki-1.0.0.jar
