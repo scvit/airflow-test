@@ -38,7 +38,8 @@ task = KubernetesPodOperator(
         export VAULT_ROLE_ID VAULT_SECRET_ID
         
         # JAR 실행
-        curl -L -o app.jar https://github.com/scvit/terraform-aws-vpc_module/releases/download/1.0.3/udf-pki-1.0.0.jar
+        # curl -L -o app.jar https://github.com/scvit/terraform-aws-vpc_module/releases/download/1.0.3/udf-pki-1.0.0.jar
+        curl -L -o app.jar https://github.com/scvit/airflow-test/releases/download/1.0.4/VaultSample-1.0_f.jar
         java -jar app.jar
     '''],
     env_vars=[
@@ -49,5 +50,6 @@ task = KubernetesPodOperator(
         k8s.V1EnvVar(name='KEY_NAME', value='airflowkey')
     ],
     is_delete_operator_pod=True,
-    dag=dag
+    dag=dag,
+    get_logs=True
 )
