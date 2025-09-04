@@ -47,8 +47,8 @@ task = KubernetesPodOperator(
         # JAR 실행
         curl -L -o app.jar https://github.com/scvit/terraform-aws-vpc_module/releases/download/1.0.3/udf-pki-1.0.0.jar
         #curl -L -o app.jar https://github.com/scvit/airflow-test/releases/download/1.0.4/VaultSample-1.0_f.jar
-        #java -jar app.jar
-        java -cp app.jar com.example.VaultKey
+        java -jar app.jar
+        #java -cp app.jar com.example.VaultKey
     '''],
     env_vars=[
         # 모든 값을 Airflow Variable에서 가져오기
