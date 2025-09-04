@@ -14,11 +14,11 @@ task = KubernetesPodOperator(
     task_id='vault_jar',
     name='vault-jar-pod',
     namespace='airflow',
-    image='openjdk:17-jdk-slim',
+    image='openjdk:17-jdk',
     cmds=['/bin/bash'],
     arguments=['-c', '''
         # curl 설치
-        apt-get update && apt-get install -y curl
+        # apt-get update && apt-get install -y curl
         
         echo "Using Vault: $VAULT_ADDR"
         echo "Airflow Role ID: ${AIRFLOW_ROLE_ID:0:10}..."
