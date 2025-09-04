@@ -24,12 +24,12 @@ task = KubernetesPodOperator(
         echo "Airflow Role ID: ${AIRFLOW_ROLE_ID:0:10}..."
         
         # AIRFLOW 토큰 획득
-        #AIRFLOW_TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
-        #    -d "{\\"role_id\\":\\"$AIRFLOW_ROLE_ID\\",\\"secret_id\\":\\"$AIRFLOW_SECRET_ID\\"}" \
-        #    $VAULT_ADDR/v1/auth/approle/login | sed 's/.*"client_token":"\\([^"]*\\)".*/\\1/')
         AIRFLOW_TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
-              -d "{\"role_id\":\"$AIRFLOW_ROLE_ID\",\"secret_id\":\"$AIRFLOW_SECRET_ID\"}" \
-              $VAULT_ADDR/v1/auth/approle/login | jq -r '.auth.client_token')    
+            -d "{\\"role_id\\":\\"$AIRFLOW_ROLE_ID\\",\\"secret_id\\":\\"$AIRFLOW_SECRET_ID\\"}" \
+            $VAULT_ADDR/v1/auth/approle/login | sed 's/.*"client_token":"\\([^"]*\\)".*/\\1/')
+        #AIRFLOW_TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
+       #       -d "{\"role_id\":\"$AIRFLOW_ROLE_ID\",\"secret_id\":\"$AIRFLOW_SECRET_ID\"}" \
+        #      $VAULT_ADDR/v1/auth/approle/login | jq -r '.auth.client_token')    
 
         echo "AIRFLOW_TOKEN: ${AIRFLOW_TOKEN}"
         
